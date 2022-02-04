@@ -19,15 +19,39 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
   <link rel="stylesheet" href="css/styles.css?v=1.0">
+  <style type="text/css">
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    body svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+    }
+  </style>
   
   <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
 </head>
 
 <body>
   <script type="text/javascript">
-    var draw = SVG().addTo('body').size('100vw', '100vh');
-    draw.viewbox(0,0,900,1600)
-    var rect = draw.rect(100, 100).attr({ fill: '#f06' })
+    var draw = SVG().viewbox(0,0,9,16).attr({ preserveAspectRatio: 'xMidYMid meet' }).addTo('body');
+    var rect = draw.rect(9, 16).attr({ fill: '#f06' });
+    var debug = draw.text("debug").attr({ 'font-size': .5 }).x(1).y(15);
+    var movement = [];
+    draw.on('touchstart', function(e) {
+      console.log(e.touches[0]);
+      debug.plain("touchstart");
+    });
+    draw.on('touchmove', function(e) {
+      console.log(e.changedTouches);
+      debug.plain("touchmove");
+    });
   </script>
 </body>
 </html>
