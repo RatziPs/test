@@ -19,11 +19,15 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
   <link rel="stylesheet" href="css/styles.css?v=1.0">
+  
+  <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
 </head>
 
 <body>
   <script type="text/javascript">
-  
+    var draw = SVG().addTo('body').size('100vw', '100vh');
+    draw.viewbox(0,0,900,1600)
+    var rect = draw.rect(100, 100).attr({ fill: '#f06' })
   </script>
 </body>
 </html>
