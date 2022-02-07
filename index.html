@@ -43,6 +43,111 @@
 
 <body>
 	<script type="text/javascript">
+		class testItem {
+			constructor(obj) {
+				this.dom = obj;
+				this._x = this.dom.x();
+				this._y = this.dom.y();
+			}
+			set x(x) {
+				this._x = x;
+			}
+			get x() {
+				return this._x;
+			}
+			set y(y) {
+				this._y = y;
+			}
+			get y() {
+				return this._y;
+			}
+			set pos(pos) {
+				this._x = pos[0];
+				this._y = pos[1];
+			}
+			get pos() {
+				return [this._x, this._y];
+			}
+			setCamera(cam) {
+				this.dom.x(this._x - cam[0] + cam[3]);
+				this.dom.y(this._y - cam[1] + cam[4]);
+			}
+		}
+		class testEngine {
+			constructor(logic, width, height) {
+				this.width = width;
+				this.height = height;
+				this.canvas = SVG().viewbox(0,0,width,height).attr({ preserveAspectRatio: 'xMidYMid meet' }).addTo('body');
+				this.background = this.canvas.rect(width, height);
+				this.items = [];
+				this.touches = [];
+				var events = ['touchstart', 'touchmove', 'touchend', 'touchcancel'];
+				for (var k in events)
+					this.canvas.on(events[k], this.event);
+				this.logic = logic;
+				this.logic.init(this);
+				this._lastRender = 0;
+				this.loop = this.loop.bind(this);
+				window.requestAnimationFrame(this.loop);
+			}
+			loop(timestamp) {
+				var progress = timestamp - this._lastRender;
+				this.update(progress);
+				this.draw();
+				this._lastRender = timestamp;
+				window.requestAnimationFrame(this.loop);
+			}
+			update(progress) {
+				this.logic.update(progress);
+			}
+			draw() {
+				var cam = this.logic.camera;
+				cam[3] = this.width/2;
+				cam[4] = this.height/2;
+				for (var k in this.items) {
+					var item = this.items[k];
+					if (!item.absolute) {
+						console.log(item.x, cam[0], this.width/2);
+						item.setCamera(cam);
+					}
+				}
+			}
+			event(e) {
+				this.touch = e.changedTouches[0];
+				console.log(e, this);
+				//this.logic['on' + e.]
+			}
+			addObj(obj, absolute) {
+				obj = new testItem(obj);
+				obj.absolute = absolute;
+				obj.dom.addTo(this.canvas);
+				this.items.push(obj);
+			}
+		}
+		class testLogic {
+			constructor() {
+				this.curPos = [0,0];
+				this.zoom = 1;
+			}
+			init(engine) {
+				engine.background.attr({fill: "#f06"});
+				var me = engine.canvas.circle();
+				me.attr({r:.5,cx:"50%",cy:"50%"});
+				engine.addObj(me, true);
+				var ob = engine.canvas.rect(1,1);
+				engine.addObj(ob);
+			}
+			update(progress) {}
+			draw() {}
+			get camera() {
+				return [this.curPos[0], this.curPos[1], this.zoom];
+			}
+		}
+
+		new testEngine(new testLogic(), 9, 16);
+
+		function test() {
+
 		var draw = SVG().viewbox(0,0,9,16).attr({ preserveAspectRatio: 'xMidYMid meet' }).addTo('body');
 		var rect = draw.rect(9, 16).attr({ fill: '#f06' });
 		var debug = draw.text(function (add) {
@@ -138,6 +243,8 @@
 				debug.add('<tspan x="1" dy="1.2em">touchend ' + c[0].toFixed(2) + " " + c[1].toFixed(2) + "\n</tspan>");
 			}*/
 		}).on('moveTest', move);
+
+		}
 	</script>
 </body>
 </html>
