@@ -1,62 +1,143 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>A Basic HTML5 Template</title>
-  <meta name="description" content="A simple HTML5 Template for new projects.">
-  <meta name="author" content="SitePoint">
+	<title>A Basic HTML5 Template</title>
+	<meta name="description" content="A simple HTML5 Template for new projects.">
+	<meta name="author" content="SitePoint">
 
-  <meta property="og:title" content="A Basic HTML5 Template">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://www.sitepoint.com/a-basic-html5-template/">
-  <meta property="og:description" content="A simple HTML5 Template for new projects.">
-  <meta property="og:image" content="image.png">
+	<meta property="og:title" content="A Basic HTML5 Template">
+	<meta property="og:type" content="website">
+	<meta property="og:url" content="https://www.sitepoint.com/a-basic-html5-template/">
+	<meta property="og:description" content="A simple HTML5 Template for new projects.">
+	<meta property="og:image" content="image.png">
 
-  <!--link rel="icon" href="/favicon.ico">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png"-->
+	<!--link rel="icon" href="/favicon.ico">
+	<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="/apple-touch-icon.png"-->
 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
-  <style type="text/css">
-    html, body {
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      overflow: hidden;
-      background: darkblue;
-    }
-    body svg {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: -1;
-    }
-  </style>
-  
-  <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+	<style type="text/css">
+		html, body {
+			margin: 0;
+			padding: 0;
+		}
+		body {
+			overflow: hidden;
+			background: darkblue;
+		}
+		body svg {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			z-index: -1;
+		}
+	</style>
+	
+	<script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
 </head>
 
 <body>
-  <script type="text/javascript">
-    var draw = SVG().viewbox(0,0,9,16).attr({ preserveAspectRatio: 'xMidYMid meet' }).addTo('body');
-    var rect = draw.rect(9, 16).attr({ fill: '#f06' });
-    var debug = draw.text("debug").attr({ 'font-size': .5 }).x(1).y(15);
-    var movement = [];
-    draw.on('touchstart', function(e) {
-      console.log(e.touches[0]);
-      debug.plain("touchstart " + e.changedTouches[0].clientX + " " + e.changedTouches[0].clientY);
-    }).on('touchmove', function(e) {
-      console.log(e.changedTouches);
-      debug.plain("touchmove " + e.changedTouches[0].clientX + " " + e.changedTouches[0].clientY);
-    }).on('touchend', function(e) {
-      console.log(e.changedTouches);
-      debug.plain("touchend " + e.changedTouches[0].clientX + " " + e.changedTouches[0].clientY);
-    });
-  </script>
+	<script type="text/javascript">
+		var draw = SVG().viewbox(0,0,9,16).attr({ preserveAspectRatio: 'xMidYMid meet' }).addTo('body');
+		var rect = draw.rect(9, 16).attr({ fill: '#f06' });
+		var debug = draw.text(function (add) {
+				add.tspan("debug");
+				add.tspan("curPos: ").newLine();
+				add.tspan("0 0");
+				add.tspan("targetPos: ").newLine();
+				add.tspan("0 0");
+			}).attr({ 'font-size': .3 }).x(1).y(1),
+			debugCurPos = debug.children()[2],
+			debugTargetPos = debug.children()[4];
+
+		var pattern = draw.pattern(2, 2, function(add) {
+			add.rect(2,2).fill("#f06");
+			add.rect(1,1).fill("#60f");
+			add.rect(1,1).fill("#60f").move(1,1)
+		});
+		rect.fill(pattern);
+
+		function loop(timestamp) {
+			var progress = timestamp - lastRender;
+
+			update(progress);
+
+			lastRender = timestamp;
+			window.requestAnimationFrame(loop);
+		}
+		var lastRender = 0;
+		window.requestAnimationFrame(loop);
+
+		function update(progress) {
+			move(progress);
+			drawBackground();
+		}
+
+		function drawBackground() {
+			pattern.x(-curPos[0]*9).y(-curPos[1]*16);
+		}
+
+		function getCoordinates(touch) {
+			var bounds = rect.node.getBoundingClientRect(),
+				x = (touch.clientX - bounds.x) / bounds.width,
+				y = (touch.clientY - bounds.y) / bounds.height;
+			if (x < 0 || x > 1)
+				x = -1;
+			if (y < 0 || y > 1)
+				y = -1;
+			return [x, y];
+		}
+		var curTouch = null;
+		var curPos = [0,0], targetPos = [0,0], targetSpeed = [0,0];
+		function move(progress) {
+			if (curTouch) {
+				var target = getCoordinates(curTouch);
+				if (target[0] > 0 && target[1] > 0) {
+					targetPos = [curPos[0] + target[0] - .5, curPos[1] + target[1] - .5];
+					targetSpeed = [(target[0] - .5) / 1000, (target[1] - .5) / 1000];
+				}
+			}
+			var movement = [];
+			for (var i = 0; i < 2; i++) {
+				movement[i] = targetSpeed[i] * progress;
+				if ((movement[i] > 0 && movement[i] + curPos[i] > targetPos[i]) || movement[i] < 0 && movement[i] + curPos[i] < targetPos[i])
+					movement[i] = targetPos[i] - curPos[i];
+				curPos[i] += movement[i];
+			}
+			
+			debugCurPos.plain(curPos[0].toFixed(2) + " " + curPos[1].toFixed(2));
+			debugTargetPos.plain(targetPos[0].toFixed(2) + " " + targetPos[1].toFixed(2));
+		}
+		draw.on('touchstart', async function(e) {
+			curTouch = e.changedTouches[0]; e.preventDefault();
+			/*return;
+			debug.plain("");
+			for (var i=0; i<e.changedTouches.length; i++) {
+				var c = getCoordinates(e.changedTouches[i]);
+				debug.add('<tspan x="1" dy="1.2em">touchstart ' + c[0].toFixed(2) + " " + c[1].toFixed(2) + "\n</tspan>");
+			}*/
+		}).on('touchmove', function(e) {
+			curTouch = e.changedTouches[0]; e.preventDefault();
+			/*return;
+			debug.plain("");
+			for (var i=0; i<e.changedTouches.length; i++) {
+				var c = getCoordinates(e.changedTouches[i]);
+				debug.add('<tspan x="1" dy="1.2em">touchmove ' + c[0].toFixed(2) + " " + c[1].toFixed(2) + "\n</tspan>");
+			}*/
+		}).on('touchend', function(e) {
+			curTouch = null; e.preventDefault();
+			/*return;
+			debug.plain("");
+			for (var i=0; i<e.changedTouches.length; i++) {
+				var c = getCoordinates(e.changedTouches[i]);
+				debug.add('<tspan x="1" dy="1.2em">touchend ' + c[0].toFixed(2) + " " + c[1].toFixed(2) + "\n</tspan>");
+			}*/
+		}).on('moveTest', move);
+	</script>
 </body>
 </html>
